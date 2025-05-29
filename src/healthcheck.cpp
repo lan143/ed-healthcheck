@@ -52,7 +52,7 @@ void EDHealthCheck::HealthCheck::registerHandlers(AsyncWebServer* server)
 void EDHealthCheck::HealthCheck::loop()
 {
     if ((_lastCheckTime + _checkInterval) < millis()) {
-        for (auto service : _services) {
+        for (auto& service : _services) {
             service.check();
         }
 
