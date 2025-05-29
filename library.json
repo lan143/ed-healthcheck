@@ -1,0 +1,31 @@
+{
+    "name": "ed-healthcheck",
+    "keywords": "iot, home, automation, esp32",
+    "description": "Healthcheck implementation for embedded devices",
+    "authors":
+    {
+      "name": "Artem Kravchenko",
+      "url": "https://lan143.ru"
+    },
+    "repository":
+    {
+      "type": "git",
+      "url": "https://github.com/lan143/ed-ha.git"
+    },
+    "version": "0.1.0",
+    "frameworks": "arduino",
+    "platforms": ["espressif32"],
+    "dependencies": [
+      {
+        "name": "ArduinoJSON"
+      },
+      {
+        "name": "ESP32Async/ESPAsyncWebServer"
+      },
+      {
+        "name": "ed-utils",
+        "version": "https://github.com/lan143/ed-utils"
+      }
+    ]
+  }
+  
