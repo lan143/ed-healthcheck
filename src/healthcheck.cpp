@@ -1,3 +1,4 @@
+#include <Json.h>
 #include "healthcheck.h"
 
 void EDHealthCheck::HealthCheck::init(unsigned long checkInterval, int successCount, int failsCount)
@@ -9,7 +10,7 @@ void EDHealthCheck::HealthCheck::init(unsigned long checkInterval, int successCo
 
 void EDHealthCheck::HealthCheck::registerHandlers(AsyncWebServer* server)
 {
-    _server->on("/healthckeck/healty", HTTP_GET, [this](AsyncWebServerRequest *request) {
+    server->on("/healthckeck/healty", HTTP_GET, [this](AsyncWebServerRequest *request) {
         AsyncResponseStream *response = request->beginResponseStream("application/json");
         std::string payload = EDUtils::buildJson([this](JsonObject entity) {
             entity["healty"] = true;
@@ -19,7 +20,7 @@ void EDHealthCheck::HealthCheck::registerHandlers(AsyncWebServer* server)
         request->send(response);
     });
 
-    _server->on("/healthckeck/ready", HTTP_GET, [this](AsyncWebServerRequest *request) {
+    server->on("/healthckeck/ready", HTTP_GET, [this](AsyncWebServerRequest *request) {
         AsyncResponseStream *response = request->beginResponseStream("application/json");
         bool isReady = true;
 
@@ -42,8 +43,9 @@ void EDHealthCheck::HealthCheck::registerHandlers(AsyncWebServer* server)
             entity["message"] = message;
         });
 
+        response->setCode(isReady ? 200 : 500);
         response->write(payload.c_str());
-        request->send(isReady ? 200 : 500, response);
+        request->send(response);
     });
 }
 
