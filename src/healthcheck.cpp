@@ -31,9 +31,7 @@ void EDHealthCheck::HealthCheck::registerHandlers(AsyncWebServer* server)
                 if (service.getFailsCount() > _failsCount) {
                     isReady = false;
                     message = service.getMessage();
-                }
-
-                if (service.getSuccessCount() < _successCount) {
+                } else if (service.getSuccessCount() < _successCount) {
                     isReady = false;
                     message = "service success count less min sucess count";
                 }
