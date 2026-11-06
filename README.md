@@ -101,7 +101,11 @@ void loop()
 | Метод и путь | Ответ | Назначение |
 | --- | --- | --- |
 | `GET /healthcheck/healty` | всегда 200, `{"healty":true}` | liveness; зарегистрированные сервисы не опрашиваются |
-| `GET /healthcheck/ready` | 200 `{"ready":true,"message":""}` либо 500 `{"ready":false,"message":"..."}` | readiness; готовность всех сервисов |
+| `GET /healthcheck/ready` | 200 `{"ready":true,"message":"","warning":true,"warningMessage":"..."}` либо 500 `{"ready":false,"message":"...","warning":false,"warningMessage":""}` | readiness; готовность всех сервисов |
+
+Поля `warning` и `warningMessage` — аддитивные: они присутствуют в ответе всегда и не
+влияют на HTTP-код (warning всегда сопровождается 200, если сервисы готовы). Если один
+сервис в warning, а другой падает, в 500-ответе придёт `warning:true` вместе с `ready:false`.
 
 Написание `healty` (вместо `healthy`) — историческая опечатка, зафиксированная в API.
 Ключ JSON тоже `healty`; не переименовывайте его без явного согласования.
@@ -133,6 +137,19 @@ healthCheck.init(checkInterval, successCount, failsCount);
 сообщение последнего сбоившего сервиса в порядке регистрации (перебор идёт без
 остановки на первом сбое). Если провалена проверка по числу успехов, сообщение —
 `service success count less min sucess count` (опечатка `sucess` также часть API).
+
+## Warning-режим
+
+Сервис может сообщить о некритичной проблеме, вернув из `ready()` результат
+`ReadyResult(true, "сообщение", true)`. Это warning: например, отказ некритичного
+датчика, при котором сервис остаётся работоспособным.
+
+- Warning не влияет на готовность и HTTP-код.
+- На следующем успешном опросе без warning состояние снимается.
+- Hard fail доминирует над warning: при `isReady() == false` warning сбрасывается.
+- При нескольких warning-сервисах в `warningMessage` попадает сообщение последнего
+  в порядке регистрации.
+- Ключи `warning` и `warningMessage` присутствуют в ответе всегда.
 
 ## Ограничения
 

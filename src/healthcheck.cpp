@@ -23,8 +23,10 @@ void EDHealthCheck::HealthCheck::registerHandlers(AsyncWebServer* server)
     server->on("/healthcheck/ready", HTTP_GET, [this](AsyncWebServerRequest *request) {
         AsyncResponseStream *response = request->beginResponseStream("application/json");
         bool isReady = true;
+        bool isWarning = false;
+        std::string warningMessage = "";
 
-        std::string payload = EDUtils::buildJson([this, &isReady](JsonObject entity) {
+        std::string payload = EDUtils::buildJson([this, &isReady, &isWarning, &warningMessage](JsonObject entity) {
             std::string message = "";
 
             for (auto service : _services) {
@@ -34,11 +36,16 @@ void EDHealthCheck::HealthCheck::registerHandlers(AsyncWebServer* server)
                 } else if (service.getSuccessCount() < _successCount) {
                     isReady = false;
                     message = "service success count less min sucess count";
+                } else if (service.isWarning()) {
+                    isWarning = true;
+                    warningMessage = service.getWarningMessage();
                 }
             }
 
             entity["ready"] = isReady;
             entity["message"] = message;
+            entity["warning"] = isWarning;
+            entity["warningMessage"] = warningMessage;
         });
 
         response->setCode(isReady ? 200 : 500);

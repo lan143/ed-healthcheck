@@ -13,7 +13,7 @@ Operating guide for AI agents working in this repository.
 - JSON building goes through `EDUtils::buildJson` from ed-utils `src/Json.h`, which is
   ArduinoJson v6-based (`DynamicJsonDocument`) — this effectively pins ArduinoJson v6.
 - Version source of truth: `library.json` **and** `library.properties` (both currently
-  `0.1.0`). Bump both in the same change and add an annotated git tag.
+  `0.2.0`). Bump both in the same change and add an annotated git tag.
 - Known API quirks: the liveness endpoint path is `/healthcheck/healty` and its JSON
   key is `healty` (historical typo, still present after commit `1ff91d4` "Fix endpoint
   path"). The ready endpoint also emits the literal message
@@ -27,10 +27,13 @@ Operating guide for AI agents working in this repository.
   `registerService(Ready*)`, `registerHandlers(AsyncWebServer*)`, `loop()`.
   Internally keeps a `std::list<Service>`.
 - `src/service.h` — `Service` wraps a `Ready*`; `check()` calls `ready()`: on failure it
-  increments `_failsCount`, resets `_successCount = 0` and stores the message; on
-  success it resets `_failsCount = 0` and increments `_successCount`.
+  increments `_failsCount`, resets `_successCount = 0`, stores the message and clears
+  `_isWarning`/`_warningMessage`; on warning success (`ReadyResult::isWarning()` with
+  `isReady` true) it resets `_failsCount = 0`, increments `_successCount` and stores
+  `_warningMessage` with `_isWarning = true`; on clean success it updates the counts
+  the same way and clears `_isWarning`/`_warningMessage`.
 - `src/ready.h` — abstract `Ready { virtual ReadyResult ready() = 0; }` and
-  `ReadyResult(bool isReady, std::string message)`.
+  `ReadyResult(bool isReady, std::string message, bool isWarning = false)`.
 - Root manifests: `library.json` (PlatformIO) and `library.properties` (Arduino IDE).
 - No `platformio.ini`, `examples/`, `tests/`, or CI. `.vscode/settings.json` (gitignored)
   only contains `files.associations` entries. MIT `LICENSE` is present.
@@ -43,7 +46,11 @@ Operating guide for AI agents working in this repository.
   registered service has `getSuccessCount() >= _successCount` **and**
   `getFailsCount() <= _failsCount`; otherwise HTTP 500
   `{"ready":false,"message":...}`. The fail comparison is **strict**
-  (`getFailsCount() > _failsCount` means not ready).
+  (`getFailsCount() > _failsCount` means not ready). The body now also contains the
+  additive `"warning"` and `"warningMessage"` keys; status-code semantics are unchanged.
+  Warning is a per-`Service` state from `ReadyResult::isWarning()`, cleared on the next
+  non-warning successful check, and a hard fail dominates it. The same
+  last-failing/last-warning-without-break convention applies.
 - Services are iterated **without break**: if several are failing, the reported message
   comes from the **last** failing service in registration order.
 - `loop()` runs all `Service::check()` passes when
