@@ -54,7 +54,7 @@ Operating guide for AI agents working in this repository.
 - Services are iterated **without break**: if several are failing, the reported message
   comes from the **last** failing service in registration order.
 - `loop()` runs all `Service::check()` passes when
-  `(_lastCheckTime + _checkInterval) < millis()`, then updates `_lastCheckTime`.
+  `millis() - _lastCheckTime >= _checkInterval`, then updates `_lastCheckTime`.
 - A freshly registered service reports **not ready** until the first successful
   `loop()` check (`successCount` starts at 0, below the default `successCount` of 1).
 
@@ -123,10 +123,9 @@ a 200 or 500 JSON response.
 - **ArduinoJson v6 lock via ed-utils.** Do not upgrade to v7 — `DynamicJsonDocument` was
   removed in v7.
 - **ESPAsyncWebServer fork.** The dependency is the ESP32Async maintained fork, per `library.json`.
-- **`millis()` rollover (~49.7 days).** The `(_lastCheckTime + _checkInterval) < millis()`
-  comparison is not the rollover-safe `millis() - last >= interval` idiom, so checks
-  stall after overflow. Known and intentionally not changed (consistent with sibling
-  libs) — accepted risk.
+- **`millis()` rollover (~49.7 days).** `loop()` uses the rollover-safe
+  `millis() - last >= interval` unsigned-subtraction idiom, so checks no longer stall
+  after the ~49.7-day overflow.
 - **Handler lambda captures `this`.** The `HealthCheck` instance (and its services) must
   outlive the `AsyncWebServer`.
 - **Concurrency.** `std::list` per-service heap usage is acceptable for a handful of
